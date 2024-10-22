@@ -1,4 +1,4 @@
-# A Generation-Consumption Driven Place-Transition Embedding Framework for Predictive Process Monitoring
+# A Consumption-Generation Driven Place-Transition Embedding Framework for Predictive Process Monitoring
 
 ## Installation
 
