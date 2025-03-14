@@ -140,6 +140,10 @@ class TransitionPlaceEmbeddingModel(nn.Module):
             ongoing_idx = torch.nonzero(activity_seq[:,i]).view(-1)
             if len(ongoing_idx) > 0:
                 generated_seq = activity_seq[ongoing_idx,i]
+                unseen_idx = generated_seq == (self.transition_num + 1)
+                if unseen_idx.any():
+                    generated_seq = generated_seq[~unseen_idx]
+                    ongoing_idx = ongoing_idx[~unseen_idx]
                 # generated_marking (B', K+4)
                 generated_emebdding = torch.cat((F.relu(self.G(generated_seq)), 
                                                  time_seq[ongoing_idx, :, i]), dim=1)

@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 def metric_calculate(truth_list, prediction_list):
     accuracy = metrics.accuracy_score(truth_list, prediction_list)
     precision, recall, fscore, _ = metrics.precision_recall_fscore_support(
-                    truth_list, prediction_list, average="weighted")
+                    truth_list, prediction_list, average="macro")
     return accuracy, precision, recall, fscore
 
 class EvaluationMetric():

@@ -38,21 +38,27 @@ def get_w_list(current_list, ws):
 
     return list(w_list)
 
-def get_time_feature(time_series:list):
+def get_time_feature(time_series:list, time_feature:dict):
     """
     Get time feature corresponding to the time series
     :time_series: datatime formate
+    :time_feature: time feature dict
     :return: (time interval since the start of case, 
                 time interval since the last event,
                 time interval since the midnight,
                 day in a week)
     """
+    mean_case_interval = time_feature['mean_case_interval']
+    mean_event_interval = time_feature['mean_event_interval']
+
     # timesincecasestart
     timesincecasestart = [i-time_series[0] for i in time_series]
-    time_1 = [86400 * i.days + i.seconds for i in timesincecasestart]
+    raw_time_1 = [86400 * i.days + i.seconds for i in timesincecasestart]
+    time_1 = raw_time_1/mean_case_interval
     
     # timesincelastevent
-    time_2 = [0] + [time_1[i] - time_1[i-1] for i in range(1, len(time_1))]
+    time_2 = [0] + [raw_time_1[i] - raw_time_1[i-1] for i in range(1, len(raw_time_1))]
+    time_2 = time_2/mean_event_interval
     
     # timesincemidnight
     timesincemidnight = [i-i.replace(hour=0, minute=0, second=0, microsecond=0) for i in time_series]
@@ -62,14 +68,3 @@ def get_time_feature(time_series:list):
     time_4 = [(i.weekday()+1)/7 for i in time_series]
     # time_4 = [(np.sin(2*np.pi*i.weekday()+0.5/7)+1)/2 for i in time_series]
     return time_1, time_2, time_3, time_4
-    
-def get_time_setting(data_list):
-    max_len = max([len(i)-1 for i,_ in data_list])
-    time_list =  [i for _,i in data_list]
-    case_interval = [i[-1]-i[0]  for i in time_list]
-    event_interval = [[i[j] - i[j-1] for j in range(1, len(i))]  for i in time_list]
-    max_case_interval = max([86400 * i.days + i.seconds  for i in case_interval])
-    min_case_interval = min([86400 * i.days + i.seconds  for i in case_interval])
-    max_event_interval = max([max(86400 * j.days + j.seconds for j in i)  for i in event_interval])
-    min_event_interval = min([min(86400 * j.days + j.seconds for j in i)  for i in event_interval])
-    return max_len, max_case_interval, min_case_interval, max_event_interval, min_event_interval
