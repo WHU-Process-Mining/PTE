@@ -137,8 +137,6 @@ if __name__ == "__main__":
     os.makedirs(save_folder + f'/result', exist_ok=True)
     os.makedirs(save_folder + f'/model', exist_ok=True)
     os.makedirs(save_folder + f'/curves', exist_ok=True)
-    
-    print("************* Training in different k-fold dataset ***************")
 
     train_file_name = data_path + 'train.csv'   
     

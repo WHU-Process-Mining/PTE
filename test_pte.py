@@ -8,6 +8,7 @@ import os
 import pandas as pd
 from dataset.PTE_dataset import PTEDataset
 from model.PTE import TransitionPlaceEmbeddingModel
+import re
 
 if __name__ == "__main__":
     
@@ -37,11 +38,17 @@ if __name__ == "__main__":
     test_dataset = PTEDataset(test_data_list, max_len, time_feature_dict, shuffle=False)
     model_cfg['activity_num'] = len(event_log.activity2id)
 
+    with open(f'{save_folder}/model/best_model.txt', 'r') as fin:
+       hyperparameters_str = fin.readlines()[1]
+    
+    hyperparameters_str = re.search(r"Best hyperparameters:\{(.*?)\}", hyperparameters_str, re.S).group(1)
+    hyperparameters = eval(f"{{{hyperparameters_str}}}")
+
     model = TransitionPlaceEmbeddingModel(
             transition_num=model_cfg['activity_num'],
-            dimension=model_cfg['dimension'],
-            dropout=model_cfg['dropout'],
-            beta=model_cfg['beta']).to(device)
+            dimension=hyperparameters['dimension'],
+            dropout=hyperparameters['dropout'],
+            beta=hyperparameters['beta']).to(device)
     
     # Load the best model.
     with open(f'{save_folder}/model/best_model.pth', 'rb') as fin:

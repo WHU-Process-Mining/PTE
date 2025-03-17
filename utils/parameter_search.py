@@ -22,7 +22,7 @@ def PTE_parameters(trial, cfg):
     return model_parameters
 
 
-def objective(trial, idx, cfg_parameters, train_data_list, val_data_list, save_folder): 
+def objective(trial, cfg_parameters, train_dataset, val_dataset, save_folder): 
     model_name = cfg_parameters['model_parameters']['model_name']
     if model_name=='PTE':
         model_parameters = PTE_parameters(trial, cfg_parameters)
@@ -33,16 +33,16 @@ def objective(trial, idx, cfg_parameters, train_data_list, val_data_list, save_f
      
     start_time = time.time()
     
-    best_model, best_val_accurace, _, _, _ = train_model(train_data_list, val_data_list, model_parameters, device, trial)
+    best_model_dict, best_val_accurace, _, _, _ = train_model(train_dataset, val_dataset, model_parameters, device, trial)
      
     current_best = trial.study.best_value if trial.number > 0 else 0
     if best_val_accurace > current_best:
-        with open( f'{save_folder}/model/best_model_kfd{idx}.pickle', 'wb') as fout:
-            pickle.dump(best_model, fout)
+        with open( f'{save_folder}/model/best_model.pth', 'wb') as fout:
+            torch.save(best_model_dict, fout)
 
     duartime = time.time() - start_time
    
-    record_file = open(f'{save_folder}/optimize/opt_history_{idx}.txt', 'a')
+    record_file = open(f'{save_folder}/optimize/opt_history.txt', 'a')
     record_file.write(f"\n{trial.number},{best_val_accurace},{model_parameters['dimension']},{model_parameters['dropout']},{model_parameters['beta']},{duartime}")
     record_file.close()
     

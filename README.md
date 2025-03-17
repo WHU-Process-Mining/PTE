@@ -38,7 +38,5 @@ Here, Two training methods are provided here:
     python run_pte.py
     ```
 ## Test
-    ```bash
     python test_pte.py
-    ```
 

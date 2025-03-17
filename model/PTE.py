@@ -130,7 +130,7 @@ class TransitionPlaceEmbeddingModel(nn.Module):
         
     def marking_update(self, marking, activity_seq, time_seq):
         """ Args:
-        marking: (B, max_trace_len, K+4)
+        marking: (B, max_trace_len+1, K+4)
         activity_seq: (B, max_trace_len)
         time_seq: (B, 4, max_trace_len)
         Returns:
