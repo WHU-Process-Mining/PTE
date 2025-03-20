@@ -36,7 +36,7 @@ class EventLogData():
         self.all_activities.sort()  # sort the columns to ensure the order
         self.total_activities_num = len(np.unique(df['concept:name']))
         self.activity2id = dict(zip(self.all_activities, range(1, self.total_activities_num + 1)))
-        df['time:timestamp'] = pd.to_datetime(df['time:timestamp'], format='%Y-%m-%d %H:%M:%S', utc=True)
+        df['time:timestamp'] = pd.to_datetime(df['time:timestamp'], utc=True)
         time_list = df.groupby('case:concept:name')['time:timestamp'].apply(list).tolist()
         self.time_feature = get_time_feature(time_list)
         self.max_len = max([len(i) for i in time_list])-1 # max len of the prefix
@@ -44,7 +44,7 @@ class EventLogData():
         
     def generate_data_for_input(self, df):
         all_cases = np.unique(df['case:concept:name'])
-        df['time:timestamp'] = pd.to_datetime(df['time:timestamp'], format='%Y-%m-%d %H:%M:%S', utc=True)
+        df['time:timestamp'] = pd.to_datetime(df['time:timestamp'], utc=True)
         total_data_list = [] # [[activity_seq][time_seq]] 
         for case_id in all_cases:
             case_row = df[df['case:concept:name'] == case_id]

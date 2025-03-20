@@ -8,37 +8,68 @@ def get_param(*args):
     param = Parameter(torch.empty(args))
     kaiming_uniform_(param.data, mode='fan_in', nonlinearity='relu')
     return param
+
+class TransitionTimeEmbedding(nn.Module):
+    def __init__(self, transition_num, dimension):
+        super(TransitionTimeEmbedding, self).__init__()
+        self.transition_num = transition_num
+        self.dimension = dimension
+        self.time_emb_weights = nn.Parameter(torch.randn(transition_num, 8, dimension))
+        self.time_emb_bias = nn.Parameter(torch.zeros(transition_num, dimension))
+        self.relu = nn.LeakyReLU()
     
+    def forward(self, place_embedding, transition_seq, time_seq):
+        """ Args:
+        place_embedding: (B', max_trace_len+1, K+4)
+        transition_seq: (B')
+        time_seq: (B', 4)
+        Returns:
+            time_embeddings (B', max_trace_len+1, K).
+        """
+        # (B', max_trace_len+1, 8)
+        time_feature = torch.cat((time_seq.unsqueeze(1).expand(-1, place_embedding.shape[1], -1),
+                                  place_embedding[:, :, -4:]), dim=2)
+        W_1 = self.time_emb_weights[transition_seq]  # (B, 8, dimension)
+        b1 = self.time_emb_bias[transition_seq]  # (B, dimension)
+        # 第一层线性变换 (B',max_trace_len+1,dimension)
+        out = self.relu(
+            torch.einsum('bti,bid->btd', time_feature, W_1) + b1.unsqueeze(1).expand(-1, place_embedding.shape[1], -1)
+        )
+        return out
+
 class PlaceConsumeLayer(nn.Module):
     def __init__(self, transition_num, dimension, dropout):
         super(PlaceConsumeLayer, self).__init__()
         self.transition_num = transition_num
         self.dimension = dimension
         self.C = nn.Embedding(transition_num, dimension) # Consume Embedding
-        self.T = nn.Embedding(transition_num, 4)
+        # 每个transition单独的时间特征嵌入网络
+        self.time_emb_net = TransitionTimeEmbedding(transition_num, dimension)
         self.relu = nn.LeakyReLU()
         self.place_condition = nn.Sequential(
-                nn.Linear(2*(dimension+4), dimension*2),
+                nn.Linear(3*dimension, dimension),
                 nn.LeakyReLU(),
                 nn.Dropout(dropout),
-                nn.Linear(dimension*2, dimension),
+                nn.Linear(dimension, dimension),
             )
         self.softmax = nn.Softmax(dim=1)
     
-    def cal_embedding_weights(self, place_embeddings, transition_seq):
+    def cal_embedding_weights(self, place_embeddings, transition_seq, time_seq):
         """ Args:
         place_embeddings: (B', max_trace_len+1, K+4)
         transition_seq: (B')
+        time_seq: (B', 4)
         Returns:
             embedding_weights (B', max_trace_len+1, K).
         """
         consumed_conditions = F.relu(self.C(transition_seq)).unsqueeze(1).expand(-1, place_embeddings.shape[1], -1)
-        consumed_time_conditions = self.T(transition_seq).unsqueeze(1).expand(-1, place_embeddings.shape[1], -1)
-        # (B', max_trace_len+1, 2*(K+4))
-        concatenated = torch.cat((place_embeddings, consumed_conditions, consumed_time_conditions), dim=2)
+        # (B', max_trace_len+1, K)
+        time_embeddings = self.time_emb_net(place_embeddings, transition_seq, time_seq)
+        # (B', max_trace_len+1, 3*K)
+        concatenated = torch.cat((place_embeddings[:, :, :-4], consumed_conditions, time_embeddings), dim=2)
         
         # (B', max_trace_len+1, K)
-        embedding_weights = self.place_condition(concatenated.view(-1, place_embeddings.shape[2]+self.dimension+4))
+        embedding_weights = self.place_condition(concatenated.view(-1, self.dimension*3))
         embedding_weights = embedding_weights.view(place_embeddings.shape[0], place_embeddings.shape[1], self.dimension)
         
         mask = torch.all(place_embeddings == 0, dim=2)
@@ -47,16 +78,17 @@ class PlaceConsumeLayer(nn.Module):
         return embedding_weights
         
         
-    def forward(self, marking_state, transition_seq):
+    def forward(self, marking_state, transition_seq, time_seq):
         """ Args:
         marking_state: (B', max_trace_len+1, K+4)
         transition_seq: (B')
+        time_seq: (B', 4)
         Returns:
             consumed_marking_state `(B', max_trace_len+1, K+4)`.
         """
         transition_seq = transition_seq-1
         # embedding_weights (B', max_trace_len+1, K)
-        embedding_weights = self.cal_embedding_weights(marking_state, transition_seq)
+        embedding_weights = self.cal_embedding_weights(marking_state, transition_seq, time_seq)
         consumed_place_embedding = torch.mul(embedding_weights, 
                                              F.relu(self.C(transition_seq)).unsqueeze(1).repeat(1, marking_state.shape[1], 1))
         return consumed_place_embedding
@@ -149,7 +181,7 @@ class TransitionPlaceEmbeddingModel(nn.Module):
                                                  time_seq[ongoing_idx, :, i]), dim=1)
                 # consumed_marking (B', max_trace_len+1, K)
                 ongoing_marking = marking[ongoing_idx]
-                consumed_place_embedding = self.place_consume(ongoing_marking, generated_seq)
+                consumed_place_embedding = self.place_consume(ongoing_marking, generated_seq, time_seq[ongoing_idx, :, i])
                 # marking_update
                 marking[ongoing_idx, : , :self.dimension] =  F.relu(marking[ongoing_idx, : , :self.dimension] - consumed_place_embedding)
                 marking[ongoing_idx, i+1] = generated_emebdding
