@@ -116,6 +116,7 @@ class TransitionJudgeLayer(nn.Module):
                 nn.LeakyReLU(),
                 nn.Dropout(dropout),
                 nn.Linear(dimension*2, 1),
+                nn.Softplus(),
             ) for _ in range(transition_num)
         ])
         

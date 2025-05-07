@@ -1,17 +1,14 @@
 from train_pte import train_model
 import torch
 import time
-import pickle
 
 def PTE_parameters(trial, cfg):
     # define the parameter search space
     model_parameters = {}
     
-    # model_parameters['learning_rate'] = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
-    model_parameters['dimension'] = trial.suggest_categorical('dimension', [32, 64, 128, 256, 512])
-    # model_parameters['batch_size'] = trial.suggest_categorical('batch_size', [32, 64, 128, 256, 512])
+    model_parameters['dimension'] = trial.suggest_categorical('dimension', [16, 32, 64, 128, 256])
     model_parameters['dropout'] = trial.suggest_float('dropout', 0, 1)
-    model_parameters['beta'] = trial.suggest_float('beta', 1e-3, 1e3, log=True)
+    model_parameters['beta'] = trial.suggest_categorical('beta', [0, 0.01, 0.1, 1, 10, 100, 1000, 10000])
     
     model_parameters['learning_rate'] = cfg['model_parameters']['learning_rate']
     model_parameters['valid_ratio'] = cfg['data_parameters']['valid_ratio']

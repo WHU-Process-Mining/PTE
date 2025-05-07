@@ -1,16 +1,20 @@
 seed: 0
 data_parameters:
   data_path: '/home/inspur/zhengchao/datasets'
-  dataset: 'Receipt'
+  # dataset: 'Receipt'
+  # dataset: 'helpdesk2017'
+  # dataset: 'BPIC2020_PrepaidTravelCost'
+  dataset: 'BPIC2020_RequestForPayment'
   # dataset: 'Sepsis'
+  # dataset: 'SP2020'
   valid_ratio: 0.2
 
 model_parameters:
   model_name: 'PTE'
-  batch_size: 512
-  num_epochs: 100
-  dimension: 64
-  dropout: 0.15
-  learning_rate: 0.0001
-  max_patience_num: 50
-  beta: 10
+  batch_size: 256
+  num_epochs: 300
+  dimension: 256
+  dropout: 0.3
+  learning_rate: 0.001
+  max_patience_num: 24
+  beta: 1000

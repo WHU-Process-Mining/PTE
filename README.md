@@ -30,9 +30,7 @@ Here, Two training methods are provided here:
 
 1. Specify Hyperparameters:
     Specify model_parameters in   configs/PTE_Model.yaml.
-    ```bash
-    python train_pte.py
-    ```
+    
 2. Use Optuna for Hyperparameter Optimization:
     ```bash
     python run_pte.py

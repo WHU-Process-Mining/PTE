@@ -28,7 +28,6 @@ class PTEDataset(APDataset):
         time_case, time_event, time_day, time_week = get_time_feature(time_seq, self.time_feature_dict)
         history_acyicity_seq = np.array(get_w_list(activity_seq[:-1], self.max_len))
         
-        history_time_case_seq = np.array(time_case[:-1])
         history_time_case_seq = np.array(get_w_list(time_case[:-1], self.max_len))
         history_time_event_seq = np.array(get_w_list(time_event[:-1], self.max_len))
         history_time_day_seq = np.array(get_w_list(time_day[:-1], self.max_len))

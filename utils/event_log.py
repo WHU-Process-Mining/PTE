@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
-from sklearn.model_selection import train_test_split
 
 def get_time_feature(time_seq):
     case_interval = [[i[j] - i[0] for j in range(1, len(i))]  for i in time_seq]
